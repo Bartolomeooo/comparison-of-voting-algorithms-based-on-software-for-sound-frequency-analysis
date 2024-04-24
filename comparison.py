@@ -38,17 +38,22 @@ def exponential_predictor(frequencies):
 
     return predicted_frequencies
 
-def smoothing(data):
-    smoothed = np.zeros_like(data)
-    n = len(data)
-    if n < 3:
-        return data
-    smoothed[0] = (data[0] + data[1]) / 2
-    smoothed[-1] = (data[-1] + data[-2]) / 2
-    for i in range(1, n-1):
-        smoothed[i] = (data[i-1] + data[i] + data[i+1]) / 3
-    return smoothed
 
+def exponential_smoothing(data):
+    if len(data) < 3:
+        return data
+
+    log_data = np.log(data)
+
+    smoothed_log = np.zeros_like(log_data)
+    smoothed_log[0] = (log_data[0] + log_data[1]) / 2
+    smoothed_log[-1] = (log_data[-1] + log_data[-2]) / 2
+    for i in range(1, len(log_data) - 1):
+        smoothed_log[i] = (log_data[i - 1] + log_data[i] + log_data[i + 1]) / 3
+
+    smoothed = np.exp(smoothed_log)
+
+    return smoothed
 
 def calculate_and_save_errors(true_values, results, algorithm_names, folder):
     error_path = os.path.join(folder, 'errors', 'errors.txt')
@@ -80,7 +85,7 @@ def process_folder(folder):
     result_median = median_vote(tuners)
     result_weighted_average = weighted_average_vote(tuners, weights)
     result_logarithmic = exponential_predictor(tuners.mean(axis=0))
-    result_smoothing = smoothing(tuners.mean(axis=0))
+    result_smoothing = exponential_smoothing(tuners.mean(axis=0))
 
     results = [result_median, result_weighted_average, result_logarithmic, result_smoothing]
     algorithm_names = ['Median', 'Weighted Average', 'Exponential', 'Smoothing']
