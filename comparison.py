@@ -19,6 +19,15 @@ def median_vote(tuners):
 def weighted_average_vote(tuners, weights):
     return np.average(tuners, axis=0, weights=weights)
 
+def logarithmic_predictor(frequencies):
+    x = np.arange(len(frequencies))
+    log_frequencies = np.log(frequencies)
+    coefficients = np.polyfit(x, log_frequencies, 1)
+    m, b = coefficients
+    predicted_log_frequencies = m * x + b
+    predicted_frequencies = np.exp(predicted_log_frequencies)
+    return predicted_frequencies
+
 def smoothing(data):
     smoothed = np.zeros_like(data)
     n = len(data)
@@ -51,14 +60,15 @@ def process_folder(folder):
 
     result_median = median_vote(tuners)
     result_weighted_average = weighted_average_vote(tuners, weights)
-
+    result_logarithmic = logarithmic_predictor(tuners.mean(axis=0))
     result_smoothing = smoothing(tuners.mean(axis=0))
 
-    results = [result_median, result_weighted_average, result_smoothing]
-    algorithm_names = ['Median', 'Weighted Average', 'Smoothing']
+    results = [result_median, result_weighted_average, result_logarithmic, result_smoothing]
+    algorithm_names = ['Median', 'Weighted Average', 'Logarithmic', 'Smoothing']
 
     save_results(result_median, folder, 'output_median.txt')
     save_results(result_weighted_average, folder, 'output_weighted_average.txt')
+    save_results(result_logarithmic, folder, 'output_logarithmic.txt')
     save_results(result_smoothing, folder, 'output_smoothing.txt')
 
     calculate_and_save_average_errors(true_values, results, algorithm_names, folder)
