@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import curve_fit
 import os
 
 def load_data_from_file(filename):
@@ -19,13 +20,22 @@ def median_vote(tuners):
 def weighted_average_vote(tuners, weights):
     return np.average(tuners, axis=0, weights=weights)
 
-def logarithmic_predictor(frequencies):
+def exponential_model(x, a, b):
+    return a * np.exp(b * x)
+
+def exponential_predictor(frequencies):
+    # Create an array of indices for the x-values, assuming equal spacing
     x = np.arange(len(frequencies))
-    log_frequencies = np.log(frequencies)
-    coefficients = np.polyfit(x, log_frequencies, 1)
-    m, b = coefficients
-    predicted_log_frequencies = m * x + b
-    predicted_frequencies = np.exp(predicted_log_frequencies)
+
+    # Fit the exponential model to the data using curve_fit, which performs nonlinear least squares fitting
+    params, covariance = curve_fit(exponential_model, x, frequencies)
+
+    # Extract the parameters for scaling factor 'a' and growth rate 'b' from the fitted model
+    a, b = params
+
+    # Calculate the predicted frequencies using the fitted model parameters
+    predicted_frequencies = exponential_model(x, a, b)
+
     return predicted_frequencies
 
 def smoothing(data):
@@ -69,15 +79,15 @@ def process_folder(folder):
 
     result_median = median_vote(tuners)
     result_weighted_average = weighted_average_vote(tuners, weights)
-    result_logarithmic = logarithmic_predictor(tuners.mean(axis=0))
+    result_logarithmic = exponential_predictor(tuners.mean(axis=0))
     result_smoothing = smoothing(tuners.mean(axis=0))
 
     results = [result_median, result_weighted_average, result_logarithmic, result_smoothing]
-    algorithm_names = ['Median', 'Weighted Average', 'Logarithmic', 'Smoothing']
+    algorithm_names = ['Median', 'Weighted Average', 'Exponential', 'Smoothing']
 
     save_results(result_median, folder, 'output_median.txt')
     save_results(result_weighted_average, folder, 'output_weighted_average.txt')
-    save_results(result_logarithmic, folder, 'output_logarithmic.txt')
+    save_results(result_logarithmic, folder, 'output_exponential.txt')
     save_results(result_smoothing, folder, 'output_smoothing.txt')
 
     calculate_and_save_errors(true_values, results, algorithm_names, folder)
