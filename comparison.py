@@ -39,14 +39,23 @@ def smoothing(data):
         smoothed[i] = (data[i-1] + data[i] + data[i+1]) / 3
     return smoothed
 
-def calculate_and_save_average_errors(true_values, results, algorithm_names, folder):
+
+def calculate_and_save_errors(true_values, results, algorithm_names, folder):
     error_path = os.path.join(folder, 'errors', 'errors.txt')
+    error_cents_path = os.path.join(folder, 'errors', 'errors_cents.txt')
     os.makedirs(os.path.dirname(error_path), exist_ok=True)
-    with open(error_path, 'w') as file:
+
+    with open(error_path, 'w') as file, open(error_cents_path, 'w') as file_cents:
         for result, name in zip(results, algorithm_names):
             errors = np.abs(true_values - result)
+            cents_errors = 1200 * np.log2(result / true_values)
+
             average_error = np.mean(errors)
             file.write(f"{name}: {average_error:.10f}\n".replace('.', ','))
+
+            average_cents_error = np.mean(cents_errors)
+            file_cents.write(f"{name}: {average_cents_error:.10f}\n".replace('.', ','))
+
 
 def process_folder(folder):
     base_path = os.path.join(folder, 'input')
@@ -71,7 +80,7 @@ def process_folder(folder):
     save_results(result_logarithmic, folder, 'output_logarithmic.txt')
     save_results(result_smoothing, folder, 'output_smoothing.txt')
 
-    calculate_and_save_average_errors(true_values, results, algorithm_names, folder)
+    calculate_and_save_errors(true_values, results, algorithm_names, folder)
 
     print(f"Results have been saved in the '{folder}' folder. Average errors have been saved in the '{folder}/errors' folder.")
 
